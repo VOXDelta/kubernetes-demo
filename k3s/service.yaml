@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app
+  namespace: demo-ha
+spec:
+  selector:
+    app: demo-app
+  ports:
+    - protocol: TCP
+      port: 80        # Port, den andere nutzen
+      targetPort: 8000  # Pod-Port
+  type: ClusterIP
