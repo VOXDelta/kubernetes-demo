@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo-ha
+  labels:
+    name: demo-ha
+    environment: production
