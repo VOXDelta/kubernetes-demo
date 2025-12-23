@@ -21,7 +21,7 @@ jobs:
       with:
         registry: 192.168.1.171:5000
         username: ${{ secrets.REGISTRY_USER }}
-        password: ${{ secrets.REGISTRY_PASS }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
