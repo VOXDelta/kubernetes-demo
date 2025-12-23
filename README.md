@@ -1,2 +1,2 @@
 # kubernetes-demo
-test2
+test7
