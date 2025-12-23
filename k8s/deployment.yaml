@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: demo-app:v1
-        imagePullPolicy: IfNotPresent
+        image: 192.168.1.171:5000/demo-ha/demo-app:dev
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         env:
@@ -26,7 +26,6 @@ spec:
               fieldPath: spec.nodeName
         - name: APP_VERSION
           value: "v1"
-      # Anti-Affinity erzwingt Verteilung auf unterschiedliche Nodes
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
