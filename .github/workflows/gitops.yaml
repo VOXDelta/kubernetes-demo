@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "✅ Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.vars.outputs.sha_short }}"
 
-  update-manifests:
+    update-manifests:
     needs: build-and-push
     runs-on: self-hosted
     
@@ -64,7 +64,7 @@ jobs:
         run: |
           SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
           
-          # Update image tag in deployment.yaml
+          # Update image tag
           sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${SHORT_SHA}|g" k8s/deployment.yaml
           
           echo "✅ Updated deployment.yaml"
@@ -72,6 +72,8 @@ jobs:
 
       - name: Commit and Push
         run: |
+          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
+          
           git config user.name "GitOps Bot"
           git config user.email "gitops@actions.github.com"
           
@@ -80,24 +82,11 @@ jobs:
           if git diff --staged --quiet; then
             echo "ℹ️  No changes to commit"
           else
-            SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
-            
-            git commit -m "🚀 Update image to sha-${SHORT_SHA}
+            # Einzeilige Commit-Message (einfacher!)
+            git commit -m "Deploy: Update image to sha-${SHORT_SHA} [skip ci]"
             
             git push
             
             echo "✅ Manifest updated in Git"
             echo "⏳ ArgoCD will sync within ~3 minutes"
           fi
-
-      - name: Deployment Info
-        run: |
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🎉 GitOps Pipeline Complete!"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📦 Image: sha-$(echo ${GITHUB_SHA} | cut -c1-7)"
-          echo "📝 Manifest: Updated in Git"
-          echo "🔄 ArgoCD: Will auto-sync"
-          echo "🌐 Check: https://10.0.0.2:30670"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
