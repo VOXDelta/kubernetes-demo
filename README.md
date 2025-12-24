@@ -1,2 +1,2 @@
 # kubernetes-demo
-test9 rebuild
+deploy test
