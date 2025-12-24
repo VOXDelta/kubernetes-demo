@@ -1,0 +1,110 @@
+name: GitOps CI/CD with ArgoCD
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: 192.168.1.171:5000
+  IMAGE_NAME: demo-ha/demo-app
+
+jobs:
+  build-and-push:
+    runs-on: self-hosted
+    outputs:
+      image-tag: ${{ steps.vars.outputs.sha_short }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set variables
+        id: vars
+        run: |
+          echo "sha_short=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
+          echo "🏷️  Image Tag: sha-$(echo ${GITHUB_SHA} | cut -c1-7)"
+
+      - name: Login to Registry
+        run: |
+          docker login ${{ env.REGISTRY }} \
+            -u "${{ secrets.REGISTRY_USER }}" \
+            -p "${{ secrets.REGISTRY_PASSWORD }}"
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.vars.outputs.sha_short }} \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+            --label "git.commit=${{ github.sha }}" \
+            --label "git.branch=${{ github.ref_name }}" \
+            --label "git.author=${{ github.actor }}" \
+            .
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.vars.outputs.sha_short }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Image pushed successfully
+        run: |
+          echo "✅ Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.vars.outputs.sha_short }}"
+
+  update-manifests:
+    needs: build-and-push
+    runs-on: self-hosted
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update deployment.yaml
+        run: |
+          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
+          
+          # Update image tag in deployment.yaml
+          sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${SHORT_SHA}|g" k8s/deployment.yaml
+          
+          echo "✅ Updated deployment.yaml"
+          git diff k8s/deployment.yaml
+
+      - name: Commit and Push
+        run: |
+          git config user.name "GitOps Bot"
+          git config user.email "gitops@actions.github.com"
+          
+          git add k8s/deployment.yaml
+          
+          if git diff --staged --quiet; then
+            echo "ℹ️  No changes to commit"
+          else
+            SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
+            
+            git commit -m "🚀 Update image to sha-${SHORT_SHA}
+
+Automated GitOps deployment
+- Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${SHORT_SHA}
+- Commit: ${{ github.sha }}
+- Author: ${{ github.actor }}
+
+ArgoCD will sync this change automatically."
+            
+            git push
+            
+            echo "✅ Manifest updated in Git"
+            echo "⏳ ArgoCD will sync within ~3 minutes"
+          fi
+
+      - name: Deployment Info
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 GitOps Pipeline Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Image: sha-$(echo ${GITHUB_SHA} | cut -c1-7)"
+          echo "📝 Manifest: Updated in Git"
+          echo "🔄 ArgoCD: Will auto-sync"
+          echo "🌐 Check: https://10.0.0.2:30670"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
