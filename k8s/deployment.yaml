@@ -3,34 +3,83 @@ kind: Deployment
 metadata:
   name: demo-app
   namespace: demo-ha
+  labels:
+    app: demo-app
+    version: v1
 spec:
   replicas: 3
   revisionHistoryLimit: 3
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  
   selector:
     matchLabels:
       app: demo-app
+  
   template:
     metadata:
       labels:
         app: demo-app
+        version: v1
     spec:
       containers:
       - name: demo-app
         image: 192.168.1.171:5000/demo-ha/demo-app:sha-c1a5644
         imagePullPolicy: Always
+        
         ports:
         - containerPort: 8000
+          name: http
+          protocol: TCP
+        
         env:
         - name: NODE_NAME
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         - name: APP_VERSION
           value: "v1"
+        
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 2
+          failureThreshold: 2
+      
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app: demo-app
-            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: demo-app
+              topologyKey: kubernetes.io/hostname
