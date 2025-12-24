@@ -5,6 +5,7 @@ metadata:
   namespace: demo-ha
 spec:
   replicas: 3
+  revisionHistoryLimit: 3
   selector:
     matchLabels:
       app: demo-app
