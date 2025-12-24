@@ -83,13 +83,6 @@ jobs:
             SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
             
             git commit -m "🚀 Update image to sha-${SHORT_SHA}
-
-Automated GitOps deployment
-- Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${SHORT_SHA}
-- Commit: ${{ github.sha }}
-- Author: ${{ github.actor }}
-
-ArgoCD will sync this change automatically."
             
             git push
             
