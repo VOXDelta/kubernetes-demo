@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: demo-app
-        image: 192.168.1.171:5000/demo-ha/demo-app:sha-ca3816d
+        image: 192.168.1.171:5000/demo-ha/demo-app:sha-4706307
         imagePullPolicy: Always
         
         ports:
