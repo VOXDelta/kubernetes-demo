@@ -3,12 +3,14 @@ kind: Service
 metadata:
   name: demo-app
   namespace: demo-ha
+  labels:
+    app: demo-app
 spec:
   selector:
     app: demo-app
   ports:
     - name: http
       protocol: TCP
-      port: 80        # Port, den andere nutzen
-      targetPort: 8000  # Pod-Port
+      port: 80
+      targetPort: 8000
   type: ClusterIP
