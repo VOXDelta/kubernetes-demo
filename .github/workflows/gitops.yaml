@@ -1,9 +1,11 @@
-name: GitOps CI/CD with ArgoCD
+name: GitOps Pipeline
 
 on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'k8s/deployment.yaml'
 
 env:
   REGISTRY: 192.168.1.171:5000
@@ -13,7 +15,7 @@ jobs:
   build-and-push:
     runs-on: self-hosted
     outputs:
-      image-tag: ${{ steps.vars.outputs.sha_short }}
+      sha-short: ${{ steps.vars.outputs.sha_short }}
     
     steps:
       - name: Checkout code
@@ -22,8 +24,9 @@ jobs:
       - name: Set variables
         id: vars
         run: |
-          echo "sha_short=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_OUTPUT
-          echo "🏷️  Image Tag: sha-$(echo ${GITHUB_SHA} | cut -c1-7)"
+          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
+          echo "sha_short=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "🏷️  Building image with tag: sha-${SHORT_SHA}"
 
       - name: Login to Registry
         run: |
@@ -36,9 +39,6 @@ jobs:
           docker build \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.vars.outputs.sha_short }} \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            --label "git.commit=${{ github.sha }}" \
-            --label "git.branch=${{ github.ref_name }}" \
-            --label "git.author=${{ github.actor }}" \
             .
 
       - name: Push Docker Image
@@ -46,11 +46,13 @@ jobs:
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.vars.outputs.sha_short }}
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
-      - name: Image pushed successfully
+      - name: Build Summary
         run: |
-          echo "✅ Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ steps.vars.outputs.sha_short }}"
+          echo "✅ Image built and pushed successfully"
+          echo "📦 Tag: sha-${{ steps.vars.outputs.sha_short }}"
+          echo "📍 Registry: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
 
-    update-manifests:
+  update-manifests:
     needs: build-and-push
     runs-on: self-hosted
     
@@ -62,31 +64,42 @@ jobs:
 
       - name: Update deployment.yaml
         run: |
-          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
+          SHORT_SHA="${{ needs.build-and-push.outputs.sha-short }}"
+          echo "📝 Updating deployment.yaml with image tag: sha-${SHORT_SHA}"
           
-          # Update image tag
           sed -i "s|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-.*|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${SHORT_SHA}|g" k8s/deployment.yaml
           
           echo "✅ Updated deployment.yaml"
+          echo "Changes:"
           git diff k8s/deployment.yaml
 
       - name: Commit and Push
         run: |
-          SHORT_SHA=$(echo ${GITHUB_SHA} | cut -c1-7)
+          SHORT_SHA="${{ needs.build-and-push.outputs.sha-short }}"
           
           git config user.name "GitOps Bot"
-          git config user.email "gitops@actions.github.com"
+          git config user.email "gitops@bot.local"
           
           git add k8s/deployment.yaml
           
           if git diff --staged --quiet; then
             echo "ℹ️  No changes to commit"
           else
-            # Einzeilige Commit-Message (einfacher!)
-            git commit -m "Deploy: Update image to sha-${SHORT_SHA} [skip ci]"
-            
+            git commit -m "🚀 Update image to sha-${SHORT_SHA} [skip ci]"
             git push
             
             echo "✅ Manifest updated in Git"
-            echo "⏳ ArgoCD will sync within ~3 minutes"
+            echo "⏳ ArgoCD will auto-sync within ~3 minutes"
           fi
+
+      - name: Deployment Summary
+        run: |
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🎉 GitOps Pipeline Complete!"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Image: sha-${{ needs.build-and-push.outputs.sha-short }}"
+          echo "📝 Manifest: Updated in Git"
+          echo "🔄 ArgoCD: Will auto-deploy"
+          echo "🌐 UI: https://10.0.0.2:30670"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
