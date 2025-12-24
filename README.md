@@ -1,2 +1,2 @@
 # kubernetes-demo
-deploy test
+deploy  2
