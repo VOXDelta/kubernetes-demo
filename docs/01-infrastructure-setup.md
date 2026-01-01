@@ -131,7 +131,7 @@ curl -sfL https://get.k3s.io | \
   sh -
 ```
 
-**Note:** Replaced `<token>` with the actual token from the master node. Keep this token secure - it's essentially the password to your cluster.
+**Note:** Replace `<token>` with the actual token from the master node. Keep this token secure - it's essentially the password to your cluster.
 
 ### Cluster Verification
 
