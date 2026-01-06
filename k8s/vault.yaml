@@ -1,0 +1,49 @@
+server:
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      setNodeId: true
+      
+      config: |
+        ui = true
+        
+        listener "tcp" {
+          tls_disable = 1
+          address = "[::]:8200"
+          cluster_address = "[::]:8201"
+        }
+        
+        storage "raft" {
+          path = "/vault/data"
+        }
+        
+        service_registration "kubernetes" {}
+
+  # Persistent Storage mit Longhorn
+  dataStorage:
+    enabled: true
+    size: 5Gi
+    storageClass: longhorn
+    accessMode: ReadWriteOnce
+
+  # Service als NodePort
+  service:
+    type: NodePort
+    nodePort: 30820
+
+  # Resources
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+# UI enablen
+ui:
+  enabled: true
+  serviceType: NodePort
+  serviceNodePort: 30820
