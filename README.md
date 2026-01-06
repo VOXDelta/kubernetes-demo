@@ -135,7 +135,7 @@ Detailed instructions available in the [documentation](docs/).
 - **3 nodes** (1 control plane, 2 workers)
 - **12 vCPUs** total across cluster
 - **16GB RAM** total
-- **60GB storage** across nodes
+- **300GB storage** across nodes
 
 ### Application Deployment
 - **8 pod replicas** for high availability

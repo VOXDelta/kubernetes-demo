@@ -261,7 +261,7 @@ The pre-built dashboards handle all of this without any custom configuration.
 └─────────────────┘
 ```
 
-## Next Steps
+## Next Possible Steps
 
 The monitoring stack is now complete. Potential future enhancements:
 - **Alerting** - Configure Alertmanager for Slack/email notifications on critical events

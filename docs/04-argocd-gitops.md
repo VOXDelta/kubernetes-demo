@@ -217,6 +217,9 @@ kubectl get pods -n demo-ha
 - **Problem:** Manifest updates not triggering sync
 - **Solution:** ArgoCD polls every ~3 minutes - patience required
 
-## Next Steps
+## Next Possible Steps
 
-With the full GitOps pipeline operational, the final piece is adding monitoring and observability with Prometheus and Grafana to track application performance and cluster health.
+With GitOps operational, several enhancements are possible:
+- **Monitoring Stack** - Add observability to track deployments
+- **Secrets Management** - Vault for secure credential handling  
+- **Multi-Environment Setup** - Separate dev/staging/prod clusters
