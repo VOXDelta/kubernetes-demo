@@ -1,4 +1,4 @@
-# 00 - Architecture Overview
+# 00 - Project Overview
 
 ## System Architecture
 
