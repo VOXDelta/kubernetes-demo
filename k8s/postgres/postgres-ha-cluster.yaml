@@ -1,0 +1,44 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres-ha
+  namespace: databases
+spec:
+  instances: 2
+  
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
+  
+  bootstrap:
+    initdb:
+      database: demodb
+      owner: app
+      secret:
+        name: postgres-app-user
+  
+  storage:
+    storageClass: longhorn
+    size: 5Gi
+  
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+  
+  affinity:
+    podAntiAffinityType: preferred
+    topologyKey: kubernetes.io/hostname
+  
+  monitoring:
+    enabled: true
+    podMonitorEnabled: false
+  
+  postgresql:
+    parameters:
+      shared_buffers: "64MB"
+      effective_cache_size: "192MB"
+      max_connections: "100"
+    pg_hba:
+      - host all all all scram-sha-256
