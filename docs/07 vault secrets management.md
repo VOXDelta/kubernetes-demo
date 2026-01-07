@@ -38,10 +38,10 @@ Before Vault, the cluster had no centralized secrets management:
 ```
 ┌─────────────────────────────────────────────────┐
 │           Vault Cluster (HA)                    │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
-│  │ vault-0  │  │ vault-1  │  │ vault-2  │      │
-│  │ (Leader) │  │(Follower)│  │(Follower)│      │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
+│  │ vault-0  │  │ vault-1  │  │ vault-2  │       │
+│  │ (Leader) │  │(Follower)│  │(Follower)│       │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘       │
 │       │             │             │             │
 │       └─────────────┴─────────────┘             │
 │              Raft Consensus                     │
@@ -50,8 +50,8 @@ Before Vault, the cluster had no centralized secrets management:
                       │ Persistent Storage
                       ▼
 ┌─────────────────────────────────────────────────┐
-│           Longhorn Storage                      │
-│  3 PVCs (5GB each) with 3x replication          │
+│                Longhorn Storage                 │
+│     3 PVCs (5GB each) with 3x replication       │
 └─────────────────────────────────────────────────┘
 ```
 
