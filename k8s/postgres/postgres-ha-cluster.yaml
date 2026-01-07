@@ -31,10 +31,6 @@ spec:
     podAntiAffinityType: preferred
     topologyKey: kubernetes.io/hostname
   
-  monitoring:
-    enabled: true
-    podMonitorEnabled: false
-  
   postgresql:
     parameters:
       shared_buffers: "64MB"
