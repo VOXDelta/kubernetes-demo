@@ -6,16 +6,20 @@
 [![Prometheus](https://img.shields.io/badge/Prometheus-Monitoring-E6522C?logo=prometheus&logoColor=white)](https://prometheus.io/)
 [![HashiCorp Vault](https://img.shields.io/badge/Vault-Secrets-000000?logo=vault&logoColor=white)](https://www.vaultproject.io/)
 [![Longhorn](https://img.shields.io/badge/Longhorn-Storage-48B4A1?logo=rancher&logoColor=white)](https://longhorn.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![CloudNativePG](https://img.shields.io/badge/CloudNativePG-HA-0066CC?logo=postgresql&logoColor=white)](https://cloudnative-pg.io/)
 [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI/CD-2088FF?logo=github-actions&logoColor=white)](https://github.com/features/actions)
 
 > Production-grade Kubernetes cluster with distributed storage, secrets management, complete CI/CD pipeline, automated GitOps deployments, and comprehensive monitoring - built and documented from scratch on a Proxmox homelab.
 
 ## 📊 Project Highlights
 
+- **PostgreSQL High Availability** - CloudNativePG operator with automatic failover (~5-10 sec downtime)
+- **Vault Kubernetes Authentication** - Pods authenticate to Vault using ServiceAccount tokens
 - **Enterprise Secrets Management** - HashiCorp Vault with HA Raft storage for secure credential handling
 - **Distributed Block Storage** - Longhorn with 3-way replication across cluster nodes
 - **Fully Automated Deployments** - Git push to production in ~5 minutes
-- **High Availability** - 8-pod deployment with anti-affinity rules and persistent storage
+- **High Availability Everything** - 8-pod app deployment + 2-instance PostgreSQL + 3-pod Vault cluster
 - **Complete Observability** - Custom Prometheus metrics with Grafana dashboards
 - **Self-Hosted Infrastructure** - Private registry, self-hosted CI/CD runner, all local
 - **Production Patterns** - Rolling updates, health checks, resource limits, GitOps workflow
@@ -88,19 +92,35 @@ flowchart LR
 |-----------|-------|-------------|
 | **K3s Cluster** | 3 nodes (1 control, 2 workers) | Lightweight Kubernetes distribution |
 | **Longhorn** | Distributed storage | 3-way replication, ~100GB usable capacity |
-| **Vault** | 3 pods (HA) | Secrets management with Raft consensus |
+| **Vault** | 3 pods (HA) | Secrets management with Raft consensus, Kubernetes auth |
+| **PostgreSQL** | 2 instances (HA) | CloudNativePG operator, automatic failover |
 | **Demo App** | 8 pods | FastAPI with Prometheus metrics |
 | **Monitoring** | Prometheus + Grafana | 7-day metrics retention |
 | **GitOps** | ArgoCD | Continuous deployment automation |
 
 ## ✨ Key Features
 
+### PostgreSQL High Availability
+- **CloudNativePG Operator** for automated PostgreSQL management
+- **2 instances** (1 Primary + 1 Replica) with streaming replication
+- **Automatic failover** (~5-10 seconds downtime)
+- **3 Services** automatically created (read-write, read-only, read)
+- **Longhorn storage** per instance with 3-way replication
+- **Prometheus metrics** integration for monitoring
+
+### Vault Kubernetes Authentication
+- **ServiceAccount-based authentication** - pods authenticate without hardcoded tokens
+- **K3s 1.21+ compatible** - configured for new token format
+- **Fine-grained policies** - namespace and path-level access control
+- **Token TTL** - automatic expiration for security
+- **Ready for dynamic secrets** - foundation for database credential generation
+
 ### Secrets Management
 - **HashiCorp Vault** in HA mode (3 pods with Raft consensus)
 - Encrypted secrets storage with Shamir secret sharing
 - Web UI for management and monitoring
 - Persistent storage via Longhorn
-- Ready for dynamic database credentials and Kubernetes auth
+- Kubernetes authentication configured
 
 ### Distributed Storage
 - **Longhorn** distributed block storage
@@ -146,6 +166,10 @@ flowchart LR
 ![Longhorn](https://img.shields.io/badge/Longhorn-48B4A1?style=for-the-badge&logo=rancher&logoColor=white)
 ![HashiCorp Vault](https://img.shields.io/badge/Vault-000000?style=for-the-badge&logo=vault&logoColor=white)
 
+### Database & Operators
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL_16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![CloudNativePG](https://img.shields.io/badge/CloudNativePG-0066CC?style=for-the-badge&logo=postgresql&logoColor=white)
+
 ### CI/CD & GitOps
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 ![ArgoCD](https://img.shields.io/badge/ArgoCD-EF7B4D?style=for-the-badge&logo=argo&logoColor=white)
@@ -176,6 +200,8 @@ Complete step-by-step documentation covering the entire build process:
 | [**05 - Monitoring Stack**](docs/05-monitoring-stack.md) | Prometheus & Grafana installation, custom metrics, dashboards |
 | [**06 - Longhorn Storage**](docs/06-longhorn-storage.md) | Distributed block storage, replication, persistent volumes |
 | [**07 - Vault Secrets Management**](docs/07-vault-secrets-management.md) | HashiCorp Vault HA setup, initialization, unsealing process |
+| [**08 - Vault Kubernetes Auth**](docs/08-vault-kubernetes-auth.md) | Kubernetes authentication, policies, ServiceAccount integration |
+| [**09 - PostgreSQL HA**](docs/09-postgres-ha-cloudnativepg.md) | CloudNativePG operator, HA cluster, automatic failover |
 
 ## 🚀 Quick Start
 
@@ -190,9 +216,11 @@ Complete step-by-step documentation covering the entire build process:
 2. **Configure storage** - Deploy Longhorn for distributed persistent storage
 3. **Configure registry** - Deploy private Docker registry
 4. **Install secrets management** - Set up HashiCorp Vault in HA mode
-5. **Install GitOps** - Set up ArgoCD for automated deployments
-6. **Deploy monitoring** - Install Prometheus & Grafana via Helm
-7. **Configure CI/CD** - Set up GitHub Actions with self-hosted runner
+5. **Configure Vault Kubernetes Auth** - Enable pod authentication to Vault
+6. **Deploy PostgreSQL HA** - CloudNativePG operator with automatic failover
+7. **Install GitOps** - Set up ArgoCD for automated deployments
+8. **Deploy monitoring** - Install Prometheus & Grafana via Helm
+9. **Configure CI/CD** - Set up GitHub Actions with self-hosted runner
 
 Detailed instructions available in the [documentation](docs/).
 
@@ -222,12 +250,22 @@ Detailed instructions available in the [documentation](docs/).
 - **15GB replicated storage** for Vault data
 - **Shamir secret sharing** (5 keys, threshold 3)
 - **Manual unsealing** workflow for security
+- **Kubernetes Auth** configured for pod authentication
+
+### Database Layer
+- **PostgreSQL HA cluster** (2 instances with CloudNativePG)
+- **Automatic failover** (~5-10 seconds downtime)
+- **Streaming replication** between Primary and Replica
+- **10GB replicated storage** (5GB per instance)
+- **3 Services** for read-write, read-only, and read operations
+- **Prometheus metrics** for monitoring
 
 ### Monitoring Coverage
 - **7 days** metric retention
 - **30 second** scrape interval
 - **Custom application metrics** via Prometheus instrumentation
-- **Pre-built Grafana dashboards** for cluster and pods
+- **PostgreSQL metrics** via CloudNativePG PodMonitor
+- **Pre-built Grafana dashboards** for cluster, apps, and database
 
 ## 🔧 Key Technical Decisions
 
@@ -260,6 +298,12 @@ Lightweight Kubernetes distribution perfect for homelab environments while maint
 
 ## 🎓 What I Learned
 
+- **PostgreSQL High Availability** - Operator pattern vs manual replication, failover mechanisms
+- **CloudNativePG Operator** - How operators abstract complexity and manage stateful workloads
+- **Kubernetes Operators** - Custom Resource Definitions (CRDs) and operator lifecycle
+- **Vault Kubernetes Auth** - ServiceAccount tokens, audience claims, K3s-specific configuration
+- **Namespace Design** - Separating applications, databases, and infrastructure layers
+- **StatefulSet vs Replication** - Why `replicas: 2` doesn't equal database replication
 - **Distributed Systems** - Raft consensus, leader election, replica management
 - **Secrets Management** - Vault's security model, unsealing process, HA patterns
 - **Storage Architecture** - Persistent volumes, storage classes, replication strategies
@@ -267,8 +311,9 @@ Lightweight Kubernetes distribution perfect for homelab environments while maint
 - **Kubernetes Internals** - Pod scheduling, networking, storage, RBAC
 - **CI/CD Best Practices** - Pipeline design, loop prevention, artifact management
 - **Monitoring & Observability** - Metrics collection, visualization, alerting patterns
-- **Problem-Solving** - Disk I/O errors during maintenance, ServiceMonitor discovery, registry authentication
+- **Problem-Solving** - Disk I/O errors, ServiceMonitor discovery, audience errors, registry authentication
 - **Production Patterns** - High availability, rolling updates, health checks, resource management
+- **Resource Constraints** - Sizing workloads for limited hardware (4GB worker nodes)
 
 ## 📝 Notes
 
@@ -290,13 +335,15 @@ Lightweight Kubernetes distribution perfect for homelab environments while maint
 ## 🚧 Next Possible Steps
 
 From here, the infrastructure can be extended in multiple directions:
-- **PostgreSQL + Dynamic Secrets** - Database with Vault-generated credentials
-- **Vault Kubernetes Auth** - Allow pods to authenticate to Vault via service accounts
-- **Demo App with Database** - Extend FastAPI app with PostgreSQL integration
-- **Backup Strategy** - Longhorn snapshots to TrueNAS
+- **Vault Database Secrets Engine** - Dynamic PostgreSQL credentials with automatic rotation
+- **Vault Agent Injector** - Automatically inject secrets into pods at runtime
+- **Demo App with Database** - Extend FastAPI app with PostgreSQL integration and Vault-managed credentials
+- **Backup Strategy** - CloudNativePG backups to S3 or Longhorn snapshots to TrueNAS
 - **Logging Stack** - Add Loki for centralized log aggregation
 - **Service Mesh** - Istio or Linkerd for advanced traffic management
 - **Multi-Environment** - Separate dev/staging/prod namespaces with ArgoCD
+- **TLS Everywhere** - cert-manager with Let's Encrypt for all services
+- **Network Policies** - Restrict pod-to-pod communication
 
 ---
 
